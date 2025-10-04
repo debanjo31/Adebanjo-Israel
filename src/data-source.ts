@@ -1,20 +1,25 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "./entity/User";
+import { Employee } from "./entity/Employee";
+import { Department } from "./entity/Department";
+import { LeaveRequest } from "./entity/LeaveRequest";
+import { QueueProcessingLog } from "./entity/QueueProcessingLog";
+import { config } from "./config";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
-  host: "localhost",
-  port: 3306,
-  username: "root",
-  password: "my-secret-pw",
-  database: "test",
-  synchronize: true,
-  logging: false,
-  entities: [User],
-  migrations: [],
-  subscribers: [],
+  host: config.database.host,
+  port: config.database.port,
+  username: config.database.username,
+  password: config.database.password,
+  database: config.database.name,
+  synchronize: false, // Disabled - using existing perfect schema
+  logging: config.app.nodeEnv === "development",
+  entities: [Employee, Department, LeaveRequest, QueueProcessingLog],
+  migrations: ["src/migration/*.ts"],
+  subscribers: ["src/subscriber/*.ts"],
   extra: {
-    authPlugin: "mysql_native_password",
+    // Connection pool settings for scalability
+    connectionLimit: 10,
   },
 });
