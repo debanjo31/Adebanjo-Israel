@@ -15,7 +15,6 @@ export enum QueueStatus {
 }
 
 @Entity("queue_processing_log")
-@Index(["messageId"])
 @Index(["status"])
 @Index(["createdAt"])
 export class QueueProcessingLog {

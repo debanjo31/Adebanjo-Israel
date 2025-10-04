@@ -41,7 +41,10 @@
   },
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "tsx watch src/index.ts",
-    "typeorm": "typeorm-ts-node-commonjs"
+    "dev": "tsx --watch --env-file .env src/index.ts",
+    "start:dev": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts src/migration/migration",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts"
   }
 }

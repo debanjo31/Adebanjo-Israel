@@ -10,7 +10,6 @@ import {
 import { Employee } from "./Employee";
 
 @Entity("departments")
-@Index(["name"])
 export class Department {
   @PrimaryGeneratedColumn()
   id: number;
