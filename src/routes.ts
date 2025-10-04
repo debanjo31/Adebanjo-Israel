@@ -1,28 +1,61 @@
-import { EmployeeController } from "./controller/EmployeeController";
+import { Router } from "express";
+import { DepartmentController } from "./controllers/DepartmentController";
+import { EmployeeController } from "./controllers/EmployeeController";
+import { LeaveRequestController } from "./controllers/LeaveRequestController";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "./validation/middleware";
+import {
+  createDepartmentSchema,
+  createEmployeeSchema,
+  createLeaveRequestSchema,
+  idParamSchema,
+  paginationSchema,
+} from "./validation/schemas";
 
-export const Routes = [
-  {
-    method: "get",
-    route: "/employees",
-    controller: EmployeeController,
-    action: "all",
-  },
-  {
-    method: "get",
-    route: "/employees/:id",
-    controller: EmployeeController,
-    action: "one",
-  },
-  {
-    method: "post",
-    route: "/employees",
-    controller: EmployeeController,
-    action: "save",
-  },
-  {
-    method: "delete",
-    route: "/employees/:id",
-    controller: EmployeeController,
-    action: "remove",
-  },
-];
+export const createRoutes = (): Router => {
+  const router = Router();
+
+  // Controllers
+  const departmentController = new DepartmentController();
+  const employeeController = new EmployeeController();
+  const leaveRequestController = new LeaveRequestController();
+
+  // Department routes
+  router.post(
+    "/departments",
+    validateBody(createDepartmentSchema),
+    departmentController.createDepartment
+  );
+
+  router.get(
+    "/departments/:id/employees",
+    validateParams(idParamSchema),
+    validateQuery(paginationSchema),
+    departmentController.getDepartmentEmployees
+  );
+
+  // Employee routes
+  router.post(
+    "/employees",
+    validateBody(createEmployeeSchema),
+    employeeController.createEmployee
+  );
+
+  router.get(
+    "/employees/:id",
+    validateParams(idParamSchema),
+    employeeController.getEmployeeWithLeaveHistory
+  );
+
+  // Leave request routes
+  router.post(
+    "/leave-requests",
+    validateBody(createLeaveRequestSchema),
+    leaveRequestController.createLeaveRequest
+  );
+
+  return router;
+};

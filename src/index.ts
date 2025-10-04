@@ -1,36 +1,30 @@
 import * as express from "express";
-import * as bodyParser from "body-parser";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "./data-source";
-import { Routes } from "./routes";
+import { createRoutes } from "./routes";
 
 AppDataSource.initialize()
   .then(async () => {
     // create express app
     const app = express();
-    app.use(bodyParser.json());
+    app.use(express.json());
 
-    // register express routes from defined application routes
-    Routes.forEach((route) => {
-      (app as any)[route.method](
-        route.route,
-        (req: Request, res: Response, next: Function) => {
-          const result = new (route.controller as any)()[route.action](
-            req,
-            res,
-            next
-          );
-          if (result instanceof Promise) {
-            result.then((result) =>
-              result !== null && result !== undefined
-                ? res.send(result)
-                : undefined
-            );
-          } else if (result !== null && result !== undefined) {
-            res.json(result);
-          }
-        }
-      );
+    // Add error handling middleware
+    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      console.error(err.stack);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    // Register API routes
+    app.use("/api", createRoutes());
+
+    // Health check endpoint
+    app.get("/health", (_, res) => {
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
 
     // setup express app here
