@@ -34,7 +34,7 @@ export class LeaveRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: "employee_id" })
+  @Column({ name: "employee_id", type: "int" })
   employeeId: number;
 
   @Column({ name: "start_date", type: "date" })

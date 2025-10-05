@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { LeaveRequestService } from "../services/LeaveRequestService";
-import { ResponseWrapper } from "../utils/ResponseWrapper";
+import { ResponseWrapper } from "../validation/ResponseWrapper";
 
 export class LeaveRequestController {
   private leaveRequestService: LeaveRequestService;

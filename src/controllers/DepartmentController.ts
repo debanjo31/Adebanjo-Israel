@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { DepartmentService } from "../services/DepartmentService";
-import { ResponseWrapper } from "../utils/ResponseWrapper";
+import { ResponseWrapper } from "../validation/ResponseWrapper";
 
 export class DepartmentController {
   private departmentService: DepartmentService;

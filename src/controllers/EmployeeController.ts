@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { EmployeeService } from "../services/EmployeeService";
-import { ResponseWrapper } from "../utils/ResponseWrapper";
+import { ResponseWrapper } from "../validation/ResponseWrapper";
 
 export class EmployeeController {
   private employeeService: EmployeeService;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as Joi from "joi";
-import { ResponseWrapper } from "../utils/ResponseWrapper";
+import { ResponseWrapper } from "./ResponseWrapper";
 
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {

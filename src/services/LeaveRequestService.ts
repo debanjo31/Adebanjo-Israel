@@ -1,10 +1,12 @@
 import { AppDataSource } from "../data-source";
 import { LeaveRequest, LeaveType, LeaveStatus } from "../entity/LeaveRequest";
 import { Employee } from "../entity/Employee";
+import { LeaveRequestQueueService } from "./LeaveRequestQueueService";
 
 export class LeaveRequestService {
   private leaveRequestRepository = AppDataSource.getRepository(LeaveRequest);
   private employeeRepository = AppDataSource.getRepository(Employee);
+  private leaveRequestQueueService = new LeaveRequestQueueService();
 
   async createLeaveRequest(data: {
     employeeId: number;
@@ -34,7 +36,15 @@ export class LeaveRequestService {
     leaveRequest.leaveType = data.leaveType as LeaveType;
     leaveRequest.status = LeaveStatus.PENDING;
 
-    return await this.leaveRequestRepository.save(leaveRequest);
+    // Save the leave request first to get the ID
+    const savedLeaveRequest = await this.leaveRequestRepository.save(
+      leaveRequest
+    );
+
+    // Then publish to the queue for processing
+    await this.leaveRequestQueueService.publishLeaveRequest(savedLeaveRequest);
+
+    return savedLeaveRequest;
   }
 
   private calculateBusinessDays(startDate: Date, endDate: Date): number {
