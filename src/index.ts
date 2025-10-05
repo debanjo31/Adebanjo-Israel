@@ -3,12 +3,17 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "./data-source";
 import { createRoutes } from "./routes";
 import { LeaveRequestQueueService } from "./services/LeaveRequestQueueService";
+import { CacheService } from "./services/CacheService";
+import { globalRateLimiter } from "./middleware/rateLimit.middleware";
 
 AppDataSource.initialize()
   .then(async () => {
     // create express app
     const app = express();
     app.use(express.json());
+
+    // Apply rate limiting
+    app.use("/api", globalRateLimiter);
 
     // Add error handling middleware
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -20,13 +25,18 @@ AppDataSource.initialize()
       });
     });
 
-    // Register API routes
+    // Register API routes (includes health checks)
     app.use("/api", createRoutes());
 
-    // Health check endpoint
-    app.get("/health", (_, res) => {
-      res.json({ status: "ok", timestamp: new Date().toISOString() });
-    });
+    // Initialize Redis cache
+    try {
+      const cacheService = CacheService.getInstance();
+      await cacheService.connect();
+      console.log("Redis cache connected successfully");
+    } catch (error) {
+      console.error("Failed to connect to Redis:", error);
+      console.log("API will continue without caching functionality");
+    }
 
     // Initialize RabbitMQ consumer with graceful fallback
     try {

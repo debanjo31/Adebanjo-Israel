@@ -2,6 +2,7 @@ import { Router } from "express";
 import { DepartmentController } from "./controllers/DepartmentController";
 import { EmployeeController } from "./controllers/EmployeeController";
 import { LeaveRequestController } from "./controllers/LeaveRequestController";
+import { HealthController } from "./controllers/HealthController";
 import {
   validateBody,
   validateParams,
@@ -22,6 +23,13 @@ export const createRoutes = (): Router => {
   const departmentController = new DepartmentController();
   const employeeController = new EmployeeController();
   const leaveRequestController = new LeaveRequestController();
+  const healthController = new HealthController();
+
+  // Health check routes (no /api prefix)
+  router.get("/health", healthController.checkHealth);
+  router.get("/queue-health", healthController.checkQueueHealth);
+  router.get("/db-health", healthController.checkDbHealth);
+  router.get("/redis-health", healthController.checkRedisHealth);
 
   // Department routes
   router.post(

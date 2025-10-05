@@ -101,8 +101,24 @@ export class RabbitMQService {
       throw new Error("Channel not established");
     }
 
+    // Create dead letter exchange
+    await this.channel.assertExchange("dlx", "direct", { durable: true });
+
+    // Create dead letter queue
+    await this.channel.assertQueue(`${queueName}.dlq`, {
+      durable: true,
+    });
+
+    // Bind DLQ to DLX
+    await this.channel.bindQueue(`${queueName}.dlq`, "dlx", queueName);
+
+    // Create main queue with DLX configuration
     await this.channel.assertQueue(queueName, {
       durable: true, // Queue survives broker restart
+      arguments: {
+        "x-dead-letter-exchange": "dlx",
+        "x-dead-letter-routing-key": queueName,
+      },
     });
   }
 
