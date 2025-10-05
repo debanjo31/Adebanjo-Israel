@@ -1,4 +1,3 @@
-// src/entities/Employee.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -25,13 +24,13 @@ export class Employee {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "varchar", length: 255 }) // Explicit type for name
   name: string;
 
-  @Column({ unique: true }) // Unique email
+  @Column({ type: "varchar", length: 255, unique: true }) // Explicit type for email
   email: string;
 
-  @Column({ name: "department_id" })
+  @Column({ type: "int", name: "department_id" }) // Explicit type for departmentId
   departmentId: number;
 
   @Index("idx_departmentId") // Index for department filtering
@@ -42,8 +41,8 @@ export class Employee {
   @JoinColumn({ name: "department_id" })
   department: Department;
 
-  //   @Column({ type: "enum", enum: EmployeeRole, default: EmployeeRole.STAFF })
-  //   role: EmployeeRole;
+  // @Column({ type: "enum", enum: EmployeeRole, default: EmployeeRole.STAFF })
+  // role: EmployeeRole; // Uncomment if using roles (bonus point)
 
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;

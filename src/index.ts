@@ -1,5 +1,5 @@
-import * as express from "express";
-import { Request, Response, NextFunction } from "express";
+import "reflect-metadata";
+import express, { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "./data-source";
 import { createRoutes } from "./routes";
 import { LeaveRequestQueueService } from "./services/LeaveRequestQueueService";

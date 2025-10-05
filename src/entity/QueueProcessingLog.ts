@@ -37,16 +37,16 @@ export class QueueProcessingLog {
   })
   status: QueueStatus;
 
-  @Column({ name: "retry_count", default: 0 })
+  @Column({ name: "retry_count", default: 0, type: "int" })
   retryCount: number;
 
-  @Column({ name: "max_retries", default: 3 })
+  @Column({ name: "max_retries", default: 3, type: "int" })
   maxRetries: number;
 
   @Column({ name: "error_message", type: "text", nullable: true })
   errorMessage?: string;
 
-  @Column({ name: "processed_at", type: "timestamp", nullable: true })
+  @Column({ name: "processed_at", type: "datetime", nullable: true })
   processedAt?: Date;
 
   @CreateDateColumn({ name: "created_at" })
