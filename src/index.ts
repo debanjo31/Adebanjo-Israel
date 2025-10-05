@@ -38,33 +38,6 @@ AppDataSource.initialize()
       console.log("API will continue without caching functionality");
     }
 
-    // Initialize RabbitMQ consumer with graceful fallback
-    try {
-      const leaveRequestQueueService = new LeaveRequestQueueService();
-
-      // Start consumer but don't wait for it (non-blocking)
-      leaveRequestQueueService
-        .startConsumer()
-        .then(() => {
-          console.log("RabbitMQ consumer started successfully");
-        })
-        .catch((err) => {
-          console.error("RabbitMQ consumer encountered an error:", err);
-          console.log(
-            "API will continue to work, but messages will be queued locally"
-          );
-        });
-
-      console.log(
-        "Application will continue startup regardless of RabbitMQ status"
-      );
-    } catch (error) {
-      console.error("Failed to initialize RabbitMQ service:", error);
-      console.log(
-        "API will continue to work, but without message queue functionality"
-      );
-    }
-
     // start express server
     app.listen(3000);
 
