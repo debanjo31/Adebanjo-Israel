@@ -1,6 +1,7 @@
-import { AppDataSource } from "../data-source";
 import { LeaveRequest, LeaveStatus } from "../entity/LeaveRequest";
 import { QueueProcessingLog, QueueStatus } from "../entity/QueueProcessingLog";
+import { LeaveRequestRepository } from "../repositories/LeaveRequestRepository";
+import { QueueProcessingLogRepository } from "../repositories/QueueProcessingLogRepository";
 import {
   RabbitMQService,
   QueueName,
@@ -19,10 +20,22 @@ export interface LeaveRequestQueueData {
 }
 
 export class LeaveRequestQueueService {
-  private leaveRequestRepository = AppDataSource.getRepository(LeaveRequest);
-  private queueLogRepository = AppDataSource.getRepository(QueueProcessingLog);
-  private rabbitMQService = RabbitMQService.getInstance();
+  private leaveRequestRepository: LeaveRequestRepository;
+  private queueLogRepository: QueueProcessingLogRepository;
+  private rabbitMQService: RabbitMQService;
   private retryPolicy = RetryPolicyFactory.getRetryPolicy("exponential");
+
+  constructor(
+    leaveRequestRepository?: LeaveRequestRepository,
+    queueLogRepository?: QueueProcessingLogRepository,
+    rabbitMQService?: RabbitMQService
+  ) {
+    this.leaveRequestRepository =
+      leaveRequestRepository || new LeaveRequestRepository();
+    this.queueLogRepository =
+      queueLogRepository || new QueueProcessingLogRepository();
+    this.rabbitMQService = rabbitMQService || RabbitMQService.getInstance();
+  }
 
   /**
    * Publish leave request to queue
@@ -56,14 +69,13 @@ export class LeaveRequestQueueService {
 
       // Create a log entry for the failed message
       const messageId = uuidv4();
-      const logEntry = new QueueProcessingLog();
-      logEntry.messageId = messageId;
-      logEntry.queueName = QueueName.LEAVE_REQUEST;
-      logEntry.payload = data;
-      logEntry.status = QueueStatus.FAILED;
-      logEntry.errorMessage =
-        error instanceof Error ? error.message : String(error);
-      await this.queueLogRepository.save(logEntry);
+      await this.queueLogRepository.create({
+        messageId,
+        queueName: QueueName.LEAVE_REQUEST,
+        payload: data,
+        status: QueueStatus.FAILED,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
 
       return messageId;
     }
@@ -77,13 +89,12 @@ export class LeaveRequestQueueService {
     queueName: string,
     payload: any
   ): Promise<QueueProcessingLog> {
-    const log = new QueueProcessingLog();
-    log.messageId = messageId;
-    log.queueName = queueName;
-    log.payload = payload;
-    log.status = QueueStatus.PROCESSING;
-
-    return this.queueLogRepository.save(log);
+    return await this.queueLogRepository.create({
+      messageId,
+      queueName,
+      payload,
+      status: QueueStatus.PROCESSING,
+    });
   }
 
   /**
@@ -126,9 +137,9 @@ export class LeaveRequestQueueService {
     console.log(`Processing leave request message ${message.id}`);
 
     // Check if this message has been processed before (idempotency)
-    const existingLog = await this.queueLogRepository.findOne({
-      where: { messageId: message.id },
-    });
+    const existingLog = await this.queueLogRepository.findByMessageId(
+      message.id
+    );
 
     if (existingLog && existingLog.status === QueueStatus.COMPLETED) {
       console.log(`Message ${message.id} already processed. Skipping.`);
@@ -145,10 +156,10 @@ export class LeaveRequestQueueService {
           message.data
         ));
 
-      // Find the leave request
-      const leaveRequest = await this.leaveRequestRepository.findOne({
-        where: { id: message.data.leaveRequestId },
-      });
+      // Find the leave request using repository
+      const leaveRequest = await this.leaveRequestRepository.findById(
+        message.data.leaveRequestId
+      );
 
       if (!leaveRequest) {
         throw new Error(
@@ -200,7 +211,7 @@ export class LeaveRequestQueueService {
         );
       }
 
-      // Save the updated leave request
+      // Save the updated leave request using repository
       await this.leaveRequestRepository.save(leaveRequest);
     } catch (error) {
       console.error(
@@ -218,10 +229,8 @@ export class LeaveRequestQueueService {
     message: QueueMessage<LeaveRequestQueueData>,
     error: Error
   ): Promise<void> {
-    // Find the log entry
-    const logEntry = await this.queueLogRepository.findOne({
-      where: { messageId: message.id },
-    });
+    // Find the log entry using repository
+    const logEntry = await this.queueLogRepository.findByMessageId(message.id);
 
     if (!logEntry) {
       console.error(`Log entry for message ${message.id} not found`);

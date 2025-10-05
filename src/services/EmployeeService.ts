@@ -1,45 +1,54 @@
-import { AppDataSource } from "../data-source";
-import { Employee } from "../entity/Employee";
-import { Department } from "../entity/Department";
+import { EmployeeRepository } from "../repositories/EmployeeRepository";
+import { DepartmentRepository } from "../repositories/DepartmentRepository";
 import { CacheService } from "./CacheService";
 
 export class EmployeeService {
-  private employeeRepository = AppDataSource.getRepository(Employee);
-  private departmentRepository = AppDataSource.getRepository(Department);
-  private cacheService = CacheService.getInstance();
+  private employeeRepository: EmployeeRepository;
+  private departmentRepository: DepartmentRepository;
+  private cacheService: CacheService;
+
+  constructor(
+    employeeRepository?: EmployeeRepository,
+    departmentRepository?: DepartmentRepository,
+    cacheService?: CacheService
+  ) {
+    this.employeeRepository = employeeRepository || new EmployeeRepository();
+    this.departmentRepository =
+      departmentRepository || new DepartmentRepository();
+    this.cacheService = cacheService || CacheService.getInstance();
+  }
 
   async createEmployee(data: {
     name: string;
     email: string;
     departmentId: number;
-  }): Promise<Employee> {
+  }): Promise<any> {
     // Check if employee email is unique
-    const existingEmployee = await this.employeeRepository.findOne({
-      where: { email: data.email },
-    });
+    const existingEmployee = await this.employeeRepository.findByEmail(
+      data.email
+    );
 
     if (existingEmployee) {
       throw new Error("Employee with this email already exists");
     }
 
     // Verify department exists
-    const department = await this.departmentRepository.findOne({
-      where: { id: data.departmentId },
-    });
+    const department = await this.departmentRepository.findById(
+      data.departmentId
+    );
 
     if (!department) {
       throw new Error("Department not found");
     }
 
-    // Create employee
-    const employee = this.employeeRepository.create(data);
-    return await this.employeeRepository.save(employee);
+    // Create employee using repository
+    return await this.employeeRepository.create(data);
   }
 
-  async getEmployeeWithLeaveHistory(id: number): Promise<Employee> {
+  async getEmployeeWithLeaveHistory(id: number): Promise<any> {
     // Try to get from cache first
     const cacheKey = `employee:${id}`;
-    const cachedEmployee = await this.cacheService.get<Employee>(cacheKey);
+    const cachedEmployee = await this.cacheService.get<any>(cacheKey);
 
     if (cachedEmployee) {
       console.log(`Cache hit for employee ${id}`);
@@ -47,15 +56,9 @@ export class EmployeeService {
     }
 
     console.log(`Cache miss for employee ${id}`);
-    const employee = await this.employeeRepository.findOne({
-      where: { id },
-      relations: ["leaveRequests", "department"],
-      order: {
-        leaveRequests: {
-          startDate: "DESC",
-        },
-      },
-    });
+
+    // Use repository method
+    const employee = await this.employeeRepository.findWithLeaveHistory(id);
 
     if (!employee) {
       throw new Error("Employee not found");

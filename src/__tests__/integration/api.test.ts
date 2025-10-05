@@ -1,20 +1,17 @@
 import request from "supertest";
 import express from "express";
-import { AppDataSource } from "../../data-source";
 import { createRoutes } from "../../routes";
 
 let app: express.Application;
 
 beforeAll(async () => {
-  await AppDataSource.initialize();
+  // setup.ts already initializes AppDataSource
   app = express();
   app.use(express.json());
   app.use("/api", createRoutes());
 });
 
-afterAll(async () => {
-  await AppDataSource.destroy();
-});
+// No afterAll - setup.ts handles cleanup
 
 describe("API Integration Tests", () => {
   let departmentId: number;

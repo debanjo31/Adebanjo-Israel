@@ -1,42 +1,43 @@
-import { AppDataSource } from "../data-source";
-import { Department } from "../entity/Department";
-import { Employee } from "../entity/Employee";
+import { DepartmentRepository } from "../repositories/DepartmentRepository";
+import { EmployeeRepository } from "../repositories/EmployeeRepository";
 
 export class DepartmentService {
-  private departmentRepository = AppDataSource.getRepository(Department);
-  private employeeRepository = AppDataSource.getRepository(Employee);
+  private departmentRepository: DepartmentRepository;
+  private employeeRepository: EmployeeRepository;
 
-  async createDepartment(name: string): Promise<Department> {
-    const existingDepartment = await this.departmentRepository.findOne({
-      where: { name },
-    });
+  constructor(
+    departmentRepository?: DepartmentRepository,
+    employeeRepository?: EmployeeRepository
+  ) {
+    this.departmentRepository =
+      departmentRepository || new DepartmentRepository();
+    this.employeeRepository = employeeRepository || new EmployeeRepository();
+  }
+
+  async createDepartment(name: string): Promise<any> {
+    const existingDepartment = await this.departmentRepository.findByName(name);
     if (existingDepartment) {
       throw new Error("Department with this name already exists");
     }
 
-    const department = this.departmentRepository.create({ name });
-    return await this.departmentRepository.save(department);
+    return await this.departmentRepository.create({ name });
   }
 
   async getDepartmentEmployees(
     departmentId: number,
     page: number = 1,
     limit: number = 10
-  ): Promise<{ employees: Employee[]; total: number }> {
-    const department = await this.departmentRepository.findOne({
-      where: { id: departmentId },
-    });
+  ): Promise<{ employees: any[]; total: number }> {
+    const department = await this.departmentRepository.findById(departmentId);
     if (!department) {
       throw new Error("Department not found");
     }
 
-    const [employees, total] = await this.employeeRepository.findAndCount({
-      where: { department: { id: departmentId } },
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: "ASC" },
-    });
+    const result = await this.employeeRepository.findByDepartmentPaginated(
+      departmentId,
+      { page, limit }
+    );
 
-    return { employees, total };
+    return { employees: result.data, total: result.total };
   }
 }

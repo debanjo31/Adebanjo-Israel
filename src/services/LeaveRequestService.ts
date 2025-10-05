@@ -1,12 +1,24 @@
-import { AppDataSource } from "../data-source";
 import { LeaveRequest, LeaveType, LeaveStatus } from "../entity/LeaveRequest";
-import { Employee } from "../entity/Employee";
+import { LeaveRequestRepository } from "../repositories/LeaveRequestRepository";
+import { EmployeeRepository } from "../repositories/EmployeeRepository";
 import { LeaveRequestQueueService } from "./LeaveRequestQueueService";
 
 export class LeaveRequestService {
-  private leaveRequestRepository = AppDataSource.getRepository(LeaveRequest);
-  private employeeRepository = AppDataSource.getRepository(Employee);
-  private leaveRequestQueueService = new LeaveRequestQueueService();
+  private leaveRequestRepository: LeaveRequestRepository;
+  private employeeRepository: EmployeeRepository;
+  private leaveRequestQueueService: LeaveRequestQueueService;
+
+  constructor(
+    leaveRequestRepository?: LeaveRequestRepository,
+    employeeRepository?: EmployeeRepository,
+    leaveRequestQueueService?: LeaveRequestQueueService
+  ) {
+    this.leaveRequestRepository =
+      leaveRequestRepository || new LeaveRequestRepository();
+    this.employeeRepository = employeeRepository || new EmployeeRepository();
+    this.leaveRequestQueueService =
+      leaveRequestQueueService || new LeaveRequestQueueService();
+  }
 
   async createLeaveRequest(data: {
     employeeId: number;
@@ -14,11 +26,9 @@ export class LeaveRequestService {
     endDate: Date;
     leaveType: string;
     reason?: string;
-  }): Promise<LeaveRequest> {
-    // Check if employee exists
-    const employee = await this.employeeRepository.findOne({
-      where: { id: data.employeeId },
-    });
+  }): Promise<any> {
+    // Check if employee exists using repository
+    const employee = await this.employeeRepository.findById(data.employeeId);
 
     if (!employee) {
       throw new Error("Employee not found");
@@ -27,19 +37,15 @@ export class LeaveRequestService {
     // Calculate days count (excluding weekends)
     const daysDiff = this.calculateBusinessDays(data.startDate, data.endDate);
 
-    // Create leave request
-    const leaveRequest = new LeaveRequest();
-    leaveRequest.employeeId = data.employeeId;
-    leaveRequest.startDate = data.startDate;
-    leaveRequest.endDate = data.endDate;
-    leaveRequest.daysCount = daysDiff;
-    leaveRequest.leaveType = data.leaveType as LeaveType;
-    leaveRequest.status = LeaveStatus.PENDING;
-
-    // Save the leave request first to get the ID
-    const savedLeaveRequest = await this.leaveRequestRepository.save(
-      leaveRequest
-    );
+    // Create leave request using repository
+    const savedLeaveRequest = await this.leaveRequestRepository.create({
+      employeeId: data.employeeId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      daysCount: daysDiff,
+      leaveType: data.leaveType as LeaveType,
+      status: LeaveStatus.PENDING,
+    });
 
     // Then publish to the queue for processing
     await this.leaveRequestQueueService.publishLeaveRequest(savedLeaveRequest);
