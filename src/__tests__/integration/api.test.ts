@@ -16,24 +16,26 @@ beforeAll(async () => {
 describe("API Integration Tests", () => {
   let departmentId: number;
   let employeeId: number;
+  const timestamp = Date.now();
 
   it("should create a department", async () => {
     const response = await request(app)
       .post("/api/departments")
-      .send({ name: "Engineering" })
-      .expect(201);
+      .send({ name: `Engineering-${timestamp}` });
 
+    expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
     expect(response.body.data).toHaveProperty("id");
     departmentId = response.body.data.id;
   });
 
   it("should reject duplicate department names", async () => {
-    await request(app).post("/api/departments").send({ name: "HR Dept" });
+    const dupName = `HR-Dept-${timestamp}`;
+    await request(app).post("/api/departments").send({ name: dupName });
 
     const response = await request(app)
       .post("/api/departments")
-      .send({ name: "HR Dept" })
+      .send({ name: dupName })
       .expect(400);
 
     expect(response.body.success).toBe(false);
@@ -44,7 +46,7 @@ describe("API Integration Tests", () => {
       .post("/api/employees")
       .send({
         name: "John Doe",
-        email: "john@test.com",
+        email: `john-${timestamp}@test.com`,
         departmentId,
       })
       .expect(201);
@@ -54,9 +56,10 @@ describe("API Integration Tests", () => {
   });
 
   it("should reject duplicate employee emails", async () => {
+    const dupEmail = `jane-${timestamp}@test.com`;
     await request(app).post("/api/employees").send({
       name: "Jane",
-      email: "jane@test.com",
+      email: dupEmail,
       departmentId,
     });
 
@@ -64,7 +67,7 @@ describe("API Integration Tests", () => {
       .post("/api/employees")
       .send({
         name: "Jane Smith",
-        email: "jane@test.com",
+        email: dupEmail,
         departmentId,
       })
       .expect(400);
