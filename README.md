@@ -155,10 +155,10 @@ curl -X POST http://localhost:3000/api/leave-requests \
 
 ## 🔍 Health Checks
 
-- `GET /health` - Application health
-- `GET /queue-health` - RabbitMQ health
-- `GET /db-health` - MySQL connection health
-- `GET /redis-health` - Redis cache health
+- `GET /api/health` - Application health
+- `GET /api/queue-health` - RabbitMQ health
+- `GET /api/db-health` - MySQL connection health
+- `GET /api/redis-health` - Redis cache health
 
 ## 🎯 Business Rules
 
@@ -209,33 +209,6 @@ src/
     └── integration/     # Integration tests (API)
 ```
 
-## 🔧 Configuration
-
-All configuration in `src/config/index.ts`. Override via environment variables:
-
-**Database:**
-
-- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`
-
-**Redis:**
-
-- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
-
-**RabbitMQ:**
-
-- `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD`, `RABBITMQ_VHOST`, `RABBITMQ_URI`
-
-**Application:**
-
-- `NODE_ENV`, `PORT`, `API_VERSION`
-
-**Rate Limiting:**
-
-- `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`
-
-**Queue:**
-
-- `QUEUE_RETRY_ATTEMPTS`, `QUEUE_RETRY_DELAY`
 
 ## 🐳 Docker Services
 
@@ -286,7 +259,7 @@ Monitor:
 Check connection status:
 
 ```bash
-curl http://localhost:3000/db-health
+curl http://localhost:3000/api/db-health
 ```
 
 ### Cache
@@ -294,7 +267,7 @@ curl http://localhost:3000/db-health
 Check Redis status:
 
 ```bash
-curl http://localhost:3000/redis-health
+curl http://localhost:3000/api/redis-health
 ```
 
 ## 🔄 Message Queue Flow
